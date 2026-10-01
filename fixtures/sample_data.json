@@ -1,0 +1,169 @@
+{
+  "_comment": "Sample source records for local runs. Each scenario is a realistic pattern we've seen in the T24/SFDC/Amplitude joins. Expected outcomes live in `_expectations` at the bottom so `identity_resolver.py --input` can be diffed against them in CI.",
+
+  "t24": [
+    {
+      "customer_id": "T-1001",
+      "emirates_id": "784-1985-1122334-5",
+      "dob": "1985-04-12",
+      "name_english": "Ahmed Al Mansoori",
+      "name_arabic": "أحمد المنصوري",
+      "mobile": "0501112233",
+      "email": "ahmed.almansoori@example.ae",
+      "risk_rating": "MED",
+      "segment": "priority",
+      "kyc_status": "APPROVED",
+      "created_at": "2019-03-14 10:12:00",
+      "updated_at": "2024-11-02 08:00:00",
+      "record_status": "ACTIVE"
+    },
+    {
+      "customer_id": "T-1002",
+      "emirates_id": null,
+      "dob": "1992-07-30",
+      "name_english": "Fatima Khan",
+      "name_arabic": "فاطمة خان",
+      "mobile": "0504445566",
+      "email": "fatima.k.old@example.com",
+      "risk_rating": "LOW",
+      "segment": "mass",
+      "kyc_status": "APPROVED",
+      "created_at": "2020-06-01 14:30:00",
+      "updated_at": "2023-01-20 09:00:00",
+      "record_status": "ACTIVE"
+    },
+    {
+      "customer_id": "T-1003",
+      "emirates_id": "784-1990-9988776-3",
+      "dob": "1990-01-15",
+      "name_english": "Omar Rahman",
+      "name_arabic": null,
+      "mobile": "0507778899",
+      "email": null,
+      "risk_rating": "HIGH",
+      "segment": "private",
+      "kyc_status": "APPROVED",
+      "created_at": "2017-09-10 11:00:00",
+      "updated_at": "2024-08-15 12:00:00",
+      "record_status": "ACTIVE"
+    },
+    {
+      "customer_id": "T-1004",
+      "emirates_id": null,
+      "dob": "1978-12-01",
+      "name_english": "Muhammad bin Yusuf",
+      "name_arabic": "محمد بن يوسف",
+      "mobile": "0501234567",
+      "email": "muhammad.by@example.com",
+      "risk_rating": "MED",
+      "segment": "affluent",
+      "kyc_status": "APPROVED",
+      "created_at": "2018-02-14 09:00:00",
+      "updated_at": "2024-05-10 11:00:00",
+      "record_status": "ACTIVE"
+    }
+  ],
+
+  "sfdc": [
+    {
+      "contact_id": "SF-2001",
+      "first_name": "Ahmed",
+      "last_name": "Al Mansoori",
+      "dob": "1985-04-12",
+      "phone": "+971 (0) 50 111 2233",
+      "email": "ahmed.new@example.ae",
+      "created_date": "2022-01-05 08:00:00",
+      "last_modified_date": "2025-02-10 14:00:00",
+      "is_deleted": false,
+      "_note": "Same as T-1001 by phone+DOB; new email should win survivorship (more recent update)."
+    },
+    {
+      "contact_id": "SF-2002",
+      "first_name": "Fatima",
+      "last_name": "Khan",
+      "dob": "1992-07-30",
+      "phone": "00971504445566",
+      "email": "fatima.k.new@example.com",
+      "created_date": "2022-05-01 09:00:00",
+      "last_modified_date": "2024-12-01 10:00:00",
+      "is_deleted": false,
+      "_note": "Links to T-1002 via D2 (phone+DOB); different phone format on purpose."
+    },
+    {
+      "contact_id": "SF-2003",
+      "first_name": "Mohamed",
+      "last_name": "bin Yousuf",
+      "dob": null,
+      "phone": "+971509991234",
+      "email": "muhammad.by@example.com",
+      "created_date": "2023-01-15 09:00:00",
+      "last_modified_date": "2024-08-20 09:00:00",
+      "is_deleted": false,
+      "_note": "Transliteration variant of T-1004; no DOB in SFDC. Should hit probabilistic (name JW + email domain + last-6 phone)."
+    },
+    {
+      "contact_id": "SF-2004",
+      "first_name": "Priya",
+      "last_name": "Nair",
+      "dob": "1995-11-20",
+      "phone": "+971503334455",
+      "email": "priya.nair@example.com",
+      "created_date": "2024-03-01 09:00:00",
+      "last_modified_date": "2024-09-01 09:00:00",
+      "is_deleted": false,
+      "_note": "No corresponding T24 record — should end up as a new customer (SFDC-only lead)."
+    }
+  ],
+
+  "amplitude": [
+    {
+      "user_id": "AMP-3001",
+      "email": "ahmed.new@example.ae",
+      "first_seen_at": "2024-06-01 20:00:00",
+      "last_seen_at": "2025-01-10 22:30:00",
+      "_note": "Post-login mobile event. Links via email match to SF-2001, which is already linked to T-1001."
+    },
+    {
+      "user_id": "AMP-3002",
+      "email": "unmatched.person@example.com",
+      "first_seen_at": "2024-08-01 12:00:00",
+      "last_seen_at": "2024-12-01 12:00:00",
+      "_note": "No match anywhere — probably a lead who never converted."
+    }
+  ],
+
+  "_expectations": {
+    "T-1001": {
+      "linked_with": ["SF-2001", "AMP-3001"],
+      "match_method": "deterministic",
+      "final_email": "ahmed.new@example.ae",
+      "notes": "SFDC updated_at 2025-02-10 wins over T24's 2024-11-02; Amplitude picks up via email chain."
+    },
+    "T-1002": {
+      "linked_with": ["SF-2002"],
+      "match_method": "deterministic",
+      "final_email": "fatima.k.new@example.com",
+      "notes": "D2 phone+DOB, most-recent email from SFDC."
+    },
+    "T-1003": {
+      "linked_with": [],
+      "match_method": "new_customer",
+      "notes": "Emirates ID present but no other source has it; email/phone don't collide."
+    },
+    "T-1004": {
+      "linked_with": ["SF-2003"],
+      "match_method": "probabilistic_auto",
+      "notes": "Name JW ~0.87, email domain match, phone last-6 different — should score just above 0.70."
+    },
+    "SF-2004": {
+      "linked_with": [],
+      "match_method": "new_customer",
+      "notes": "SFDC-only lead."
+    },
+    "AMP-3002": {
+      "linked_with": [],
+      "match_method": "new_customer",
+      "notes": "Unmatched mobile user; email doesn't hit any other source."
+    }
+  }
+}
