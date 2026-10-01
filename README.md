@@ -1,4 +1,4 @@
-# Identity Resolution — Mal Digital Bank Customer 360
+# Identity Resolution - Mal Digital Bank Customer 360
 
 This repo contains the identity resolution logic that feeds the golden customer record
 (`dim_customer`) in the Mal Customer 360 platform. It is a component of the wider
@@ -14,12 +14,12 @@ manual review workflow that data stewards use.
 Customer identity at Mal is fragmented across three systems that were never designed to
 talk to each other:
 
-- **T24 (core banking)** — authoritative for KYC, Emirates ID, risk rating. Populated
+- **T24 (core banking)** - authoritative for KYC, Emirates ID, risk rating. Populated
   at account opening. Older records don't always carry a validated Emirates ID and the
   `name_arabic` field is inconsistent in how diacritics and hamza are encoded.
-- **Salesforce FSC (CRM)** — service and relationship data. Email and phone are the
+- **Salesforce FSC (CRM)** - service and relationship data. Email and phone are the
   main handles. Contact records can predate the T24 record (lead → converted customer).
-- **Digital Channels (Amplitude)** — mobile app analytics keyed by device fingerprint
+- **Digital Channels (Amplitude)** - mobile app analytics keyed by device fingerprint
   (`user_id`). Email arrives only after the user logs in, so a large chunk of events
   are pre-login and have to be stitched later.
 
@@ -34,7 +34,7 @@ Two passes. The deterministic pass runs first and covers most volume cheaply. Th
 probabilistic pass only sees what the first pass couldn't match, which keeps the fuzzy
 join small enough to run in-memory on the review shard.
 
-### Pass 1 — Deterministic
+### Pass 1 - Deterministic
 
 | Rule | Keys                                          | Confidence |
 |------|-----------------------------------------------|------------|
@@ -46,21 +46,21 @@ D1 only fires when Emirates ID is present and passes the mod-11 checksum. If T24
 an unvalidated Emirates ID (happens on ~4% of pre-2019 records in the sample data), we
 skip it and fall through to D2/D3.
 
-### Pass 2 — Probabilistic
+### Pass 2 - Probabilistic
 
 Only records that didn't match in Pass 1. Score is a weighted sum:
 
-- Jaro-Winkler on normalized name — weight **0.40**
-- DOB fuzzy year match (tolerance ±180 days) — weight **0.30**
-- Phone similarity (last-6-digits + edit distance) — weight **0.20**
-- Email domain match — weight **0.10**
+- Jaro-Winkler on normalized name - weight **0.40**
+- DOB fuzzy year match (tolerance ±180 days) - weight **0.30**
+- Phone similarity (last-6-digits + edit distance) - weight **0.20**
+- Email domain match - weight **0.10**
 
 Thresholds:
 
-- **≥ 0.70** — auto-link, `match_method = 'probabilistic_auto'`
-- **0.50 – 0.69** — write to `identity_review_queue`, no gold row until a steward
+- **≥ 0.70** - auto-link, `match_method = 'probabilistic_auto'`
+- **0.50 – 0.69** - write to `identity_review_queue`, no gold row until a steward
   resolves it
-- **< 0.50** — new `mal_customer_id`, `match_method = 'new_customer'`
+- **< 0.50** - new `mal_customer_id`, `match_method = 'new_customer'`
 
 The 0.70 cutoff was tuned against a stewarded sample of 2,000 pairs. Anything below
 this on names alone tends to catch father/son pairs sharing a phone.
@@ -93,7 +93,7 @@ pytest tests/ -v
 python -m python.identity_resolver --input fixtures/sample_data.json --output /tmp/resolved.json
 ```
 
-The Glue job wrapper isn't in this repo — it lives in `mal-etl/glue-jobs/` in the main
+The Glue job wrapper isn't in this repo - it lives in `mal-etl/glue-jobs/` in the main
 platform repo and imports `IdentityResolver` from here as a wheel.
 
 ## Folder structure
@@ -133,5 +133,5 @@ identity-resolution-repo/
   when volume crosses ~1M customers.
 - **Consent isn't enforced here.** The resolver produces the linkage regardless of
   marketing consent. Downstream CAR population reads `consent_flags` and masks
-  accordingly. Keeping identity separate from consent is deliberate — regulatory
+  accordingly. Keeping identity separate from consent is deliberate - regulatory
   reporting needs to see everyone.
