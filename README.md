@@ -2,8 +2,7 @@
 
 This repo contains the identity resolution logic that feeds the golden customer record
 (`dim_customer`) in the Mal Customer 360 platform. It is a component of the wider
-assessment (see the parent `mal-assessment/` folder for the full architecture, ERD and
-CAR design).
+assessment (see the submitted architecture document and ERD for the full design).
 
 The job runs as part of the Silver → Gold layer in Glue (PySpark). The SQL variant is
 kept in sync so the same rules can be re-run in Redshift for ad-hoc audits and for the
